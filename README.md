@@ -1,4 +1,4 @@
-# TechEvents - Plataforma de Eventos de Tecnología
+# LIHWEC - Plataforma de Eventos de Tecnología
 
 Una página web moderna y responsive para difundir eventos sobre tecnología, incluyendo competencias (hackathones, programación competitiva) y eventos de difusión (workshops, keynotes, open days).
 
