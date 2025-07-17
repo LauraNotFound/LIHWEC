@@ -35,6 +35,7 @@ Eventos-Web/
 ## 📊 Datos de Eventos
 
 El archivo `data.json` contiene eventos de ejemplo de organizaciones como:
+
 - Google
 - Microsoft
 - Amazon (AWS)
@@ -48,6 +49,7 @@ El archivo `data.json` contiene eventos de ejemplo de organizaciones como:
 - Y más...
 
 Cada evento incluye:
+
 - **id**: Identificador único
 - **name**: Nombre del evento
 - **date**: Fecha en formato YYYY-MM-DD
@@ -86,16 +88,19 @@ Luego visita `http://localhost:8000` en tu navegador.
 ## 🎯 Funcionalidades
 
 ### Búsqueda y Filtros
+
 - **Barra de búsqueda**: Busca por nombre, organización, ubicación o tipo
 - **Filtro por categoría**: Competencias vs Eventos de difusión
 - **Filtro por modalidad**: Presencial, virtual o híbrido
 - **Filtro por organización**: Filtra por empresa/organización
 
 ### Eventos Separados
+
 - **Sección de Competencias**: Hackathones y programación competitiva
 - **Sección de Eventos**: Workshops, keynotes, open days
 
 ### Información Detallada
+
 - Imagen representativa del evento
 - Fecha y hora formateadas
 - Modalidad con iconos descriptivos
@@ -106,6 +111,7 @@ Luego visita `http://localhost:8000` en tu navegador.
 ## 🎨 Personalización
 
 ### Agregar Nuevos Eventos
+
 Edita el archivo `data.json` y agrega nuevos eventos siguiendo la estructura existente:
 
 ```json
@@ -125,14 +131,18 @@ Edita el archivo `data.json` y agrega nuevos eventos siguiendo la estructura exi
 ```
 
 ### Modificar Estilos
+
 Edita `styles.css` para cambiar:
+
 - Colores del tema
 - Tipografías
 - Espaciado y layouts
 - Animaciones
 
 ### Agregar Funcionalidades
+
 Modifica `script.js` para:
+
 - Agregar nuevos filtros
 - Implementar funcionalidades adicionales
 - Conectar con una API real
@@ -140,6 +150,7 @@ Modifica `script.js` para:
 ## 📱 Responsive Design
 
 La página está optimizada para:
+
 - **Mobile**: < 768px
 - **Tablet**: 768px - 1024px
 - **Desktop**: > 1024px
@@ -180,7 +191,7 @@ Este proyecto es de código abierto y está disponible bajo la licencia MIT.
 
 ## 👨‍💻 Autor
 
-Desarrollado como ejemplo de página web para eventos de tecnología.
+Desarrollado por LauraNotFound🍄
 
 ---
 
