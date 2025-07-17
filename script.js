@@ -4,7 +4,7 @@ let filteredEvents = [];
 
 // Configuración de la API - Django Rest Framework
 const API_CONFIG = {
-    baseURL: 'http://localhost:8000/api', // URL base del backend Django
+    baseURL: 'http://127.0.0.1:8080/api', // URL base del backend Django
     endpoints: {
         events: '/events/',
         eventDetail: (id) => `/events/${id}/`,
