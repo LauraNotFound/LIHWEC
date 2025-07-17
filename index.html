@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
+
 <body>
     <header>
         <div class="container">
@@ -67,6 +69,11 @@
                             <option value="">Todas las organizaciones</option>
                         </select>
                     </div>
+                    <div class="filter-group">
+                        <button id="clearFiltersBtn" class="clear-filters-btn">
+                            <i class="fas fa-times"></i> Limpiar Filtros
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -92,7 +99,10 @@
         <section id="about" class="about-section">
             <div class="container">
                 <h2>Acerca de LIHWEC</h2>
-                <p>LIHWEC (Laura Is Here With Events and Competitions) es tu plataforma centralizada para descubrir y participar en los mejores eventos de tecnología. Desde hackathones y torneos de programación competitiva hasta workshops, OpenDays y más. Aquí encontrarás todo lo que necesitas para mantenerte actualizado en el mundo tech.</p>
+                <p>LIHWEC (Laura Is Here With Events and Competitions) es tu plataforma centralizada para descubrir y
+                    participar en los mejores eventos de tecnología. Desde hackathones y torneos de programación
+                    competitiva hasta workshops, OpenDays y más. Aquí encontrarás todo lo que necesitas para mantenerte
+                    actualizado en el mundo tech.</p>
                 <div class="stats">
                     <div class="stat">
                         <i class="fas fa-calendar"></i>
@@ -133,9 +143,11 @@
                 <div class="footer-section">
                     <h4>Síguenos</h4>
                     <div class="social-links">
-                        <a href="https://www.instagram.com/lauranotfound97/"><i class="fab fa-instagram"></i></a>
-                        <a href="https://www.linkedin.com/in/laura-cecilia-mendoza-morales/"><i class="fab fa-linkedin"></i></a>
-                        <a href="https://github.com/LauraNotFound"><i class="fab fa-github"></i></a>
+                        <a href="https://www.instagram.com/lauranotfound97/" target="_blank"><i
+                                class="fab fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/laura-cecilia-mendoza-morales/" target="_blank"><i
+                                class="fab fa-linkedin"></i></a>
+                        <a href="https://github.com/LauraNotFound" target="_blank"><i class="fab fa-github"></i></a>
                     </div>
                 </div>
             </div>
@@ -145,6 +157,8 @@
         </div>
     </footer>
 
+    <script src="config.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

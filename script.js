@@ -2,6 +2,35 @@
 let allEvents = [];
 let filteredEvents = [];
 
+// Configuración de la API - Django Rest Framework
+const API_CONFIG = {
+    baseURL: 'http://localhost:8000/api', // URL base del backend Django
+    endpoints: {
+        events: '/events/',
+        eventDetail: (id) => `/events/${id}/`,
+        categories: '/categories/',
+        organizations: '/organizations/',
+        search: '/events/search/',
+        filter: '/events/filter/'
+    },
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        // Agregar aquí token de autenticación si es necesario
+        // 'Authorization': 'Bearer <token>'
+    }
+};
+
+// URLs completas de los endpoints
+const API_ENDPOINTS = {
+    events: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.events}`,
+    eventById: (id) => `${API_CONFIG.baseURL}${API_CONFIG.endpoints.eventDetail(id)}`,
+    categories: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.categories}`,
+    organizations: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.organizations}`,
+    search: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.search}`,
+    filter: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.filter}`
+};
+
 // Elementos del DOM
 const searchInput = document.getElementById('searchInput');
 const categoryFilter = document.getElementById('categoryFilter');
@@ -11,25 +40,49 @@ const competitionsGrid = document.getElementById('competitionsGrid');
 const eventsGrid = document.getElementById('eventsGrid');
 
 // Inicializar la aplicación
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     loadEvents();
     setupEventListeners();
     setupSmoothScrolling();
 });
 
-// Cargar eventos desde el archivo JSON
+// Cargar eventos desde la API de Django Rest Framework
 async function loadEvents() {
     try {
-        const response = await fetch('data.json');
+        showLoading();
+        const response = await fetch(API_ENDPOINTS.events, {
+            method: 'GET',
+            headers: API_CONFIG.headers
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
-        allEvents = data.events;
+
+        // DRF puede devolver datos paginados o directamente la lista
+        // Manejar ambos casos
+        if (data.results) {
+            // Respuesta paginada de DRF
+            allEvents = data.results;
+            // TODO: Implementar paginación si es necesario
+        } else if (Array.isArray(data)) {
+            // Lista directa
+            allEvents = data;
+        } else {
+            throw new Error('Formato de respuesta inesperado');
+        }
+
         filteredEvents = [...allEvents];
-        
-        populateOrganizationFilter();
+
+        await loadOrganizations(); // Cargar organizaciones desde endpoint separado
         renderEvents();
+        hideLoading();
     } catch (error) {
         console.error('Error loading events:', error);
-        showError('Error al cargar los eventos. Por favor, intenta de nuevo más tarde.');
+        hideLoading();
+        showError('Error al cargar los eventos. Asegúrate de que el backend Django esté ejecutándose en el puerto 8000.');
     }
 }
 
@@ -39,6 +92,12 @@ function setupEventListeners() {
     categoryFilter.addEventListener('change', handleFilterChange);
     modalityFilter.addEventListener('change', handleFilterChange);
     organizationFilter.addEventListener('change', handleFilterChange);
+
+    // Agregar event listener para el botón de limpiar filtros
+    const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+    if (clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', clearFilters);
+    }
 }
 
 // Configurar smooth scrolling para los enlaces de navegación
@@ -57,34 +116,88 @@ function setupSmoothScrolling() {
     });
 }
 
+// Poblar el filtro de organizaciones desde endpoint de DRF
+async function loadOrganizations() {
+    try {
+        // Intentar cargar desde endpoint dedicado
+        const response = await fetch(API_ENDPOINTS.organizations, {
+            method: 'GET',
+            headers: API_CONFIG.headers
+        });
+
+        let organizations = [];
+
+        if (response.ok) {
+            const data = await response.json();
+            organizations = data.results ? data.results : data;
+        } else {
+            // Fallback: extraer organizaciones de los eventos cargados
+            organizations = [...new Set(allEvents.map(event => event.organization))].sort();
+        }
+
+        populateOrganizationFilter(organizations);
+    } catch (error) {
+        console.warn('Error loading organizations from API, using fallback:', error);
+        // Fallback: extraer de los eventos
+        const organizations = [...new Set(allEvents.map(event => event.organization))].sort();
+        populateOrganizationFilter(organizations);
+    }
+}
+
 // Poblar el filtro de organizaciones
-function populateOrganizationFilter() {
-    const organizations = [...new Set(allEvents.map(event => event.organization))].sort();
-    
+function populateOrganizationFilter(organizations) {
+    // Limpiar opciones existentes (excepto la primera)
+    while (organizationFilter.children.length > 1) {
+        organizationFilter.removeChild(organizationFilter.lastChild);
+    }
+
     organizations.forEach(org => {
         const option = document.createElement('option');
-        option.value = org;
-        option.textContent = org;
+        // Si org es un objeto de DRF, usar org.name, sino usar el string directamente
+        const orgName = typeof org === 'object' ? (org.name || org.organization) : org;
+        option.value = orgName;
+        option.textContent = orgName;
         organizationFilter.appendChild(option);
     });
 }
 
-// Manejar búsqueda
-function handleSearch() {
+// Manejar búsqueda usando el endpoint de Django Rest Framework
+async function handleSearch() {
     const searchTerm = searchInput.value.toLowerCase().trim();
-    
-    if (searchTerm === '') {
-        filteredEvents = [...allEvents];
-    } else {
-        filteredEvents = allEvents.filter(event => 
-            event.name.toLowerCase().includes(searchTerm) ||
-            event.organization.toLowerCase().includes(searchTerm) ||
-            event.location.toLowerCase().includes(searchTerm) ||
-            event.type.toLowerCase().includes(searchTerm)
-        );
+
+    try {
+        showLoading();
+
+        if (searchTerm === '') {
+            // Si no hay término de búsqueda, cargar todos los eventos
+            const response = await fetch(API_ENDPOINTS.events, {
+                method: 'GET',
+                headers: API_CONFIG.headers
+            });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            filteredEvents = data.results ? data.results : data;
+        } else {
+            // Usar el endpoint de búsqueda de Django
+            const searchURL = `${API_ENDPOINTS.search}?q=${encodeURIComponent(searchTerm)}`;
+            const response = await fetch(searchURL, {
+                method: 'GET',
+                headers: API_CONFIG.headers
+            });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            filteredEvents = data.results ? data.results : data;
+        }
+
+        applyFilters();
+        hideLoading();
+    } catch (error) {
+        console.error('Error searching events:', error);
+        hideLoading();
+        showError('Error al buscar eventos. Verifica que el backend Django esté funcionando.');
     }
-    
-    applyFilters();
 }
 
 // Manejar cambios en los filtros
@@ -92,38 +205,109 @@ function handleFilterChange() {
     applyFilters();
 }
 
-// Aplicar filtros
-function applyFilters() {
-    let filtered = [...filteredEvents];
-    
+// Aplicar filtros usando el endpoint de filtrado de Django Rest Framework
+async function applyFilters() {
+    try {
+        showLoading();
+
+        // Construir query parameters para Django Rest Framework
+        const params = new URLSearchParams();
+
+        // Filtro por categoría
+        const selectedCategory = categoryFilter.value;
+        if (selectedCategory) {
+            params.append('category', selectedCategory);
+        }
+
+        // Filtro por modalidad
+        const selectedModality = modalityFilter.value;
+        if (selectedModality) {
+            params.append('modality', selectedModality);
+        }
+
+        // Filtro por organización
+        const selectedOrganization = organizationFilter.value;
+        if (selectedOrganization) {
+            params.append('organization', selectedOrganization);
+        }
+
+        // Agregar término de búsqueda si existe
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        if (searchTerm) {
+            params.append('search', searchTerm);
+        }
+
+        // Construir URL con filtros
+        let url = API_ENDPOINTS.events;
+        if (params.toString()) {
+            url = `${API_ENDPOINTS.filter}?${params.toString()}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: API_CONFIG.headers
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        filteredEvents = data.results ? data.results : data;
+
+        renderEvents();
+        hideLoading();
+    } catch (error) {
+        console.error('Error applying filters:', error);
+        hideLoading();
+
+        // Fallback: aplicar filtros localmente
+        console.warn('Applying filters locally as fallback');
+        applyFiltersLocally();
+    }
+}
+
+// Aplicar filtros localmente como fallback
+function applyFiltersLocally() {
+    let filtered = [...allEvents];
+
     // Filtro por categoría
     const selectedCategory = categoryFilter.value;
     if (selectedCategory) {
         filtered = filtered.filter(event => event.category === selectedCategory);
     }
-    
+
     // Filtro por modalidad
     const selectedModality = modalityFilter.value;
     if (selectedModality) {
         filtered = filtered.filter(event => event.modality === selectedModality);
     }
-    
+
     // Filtro por organización
     const selectedOrganization = organizationFilter.value;
     if (selectedOrganization) {
         filtered = filtered.filter(event => event.organization === selectedOrganization);
     }
-    
-    // Actualizar eventos filtrados
+
+    // Aplicar filtro de búsqueda local
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    if (searchTerm) {
+        filtered = filtered.filter(event =>
+            event.name.toLowerCase().includes(searchTerm) ||
+            event.organization.toLowerCase().includes(searchTerm) ||
+            event.location.toLowerCase().includes(searchTerm) ||
+            event.type.toLowerCase().includes(searchTerm)
+        );
+    }
+
     filteredEvents = filtered;
     renderEvents();
+    hideLoading();
 }
 
 // Renderizar eventos
 function renderEvents() {
     const competitions = filteredEvents.filter(event => event.category === 'competencia');
     const events = filteredEvents.filter(event => event.category === 'evento');
-    
+
     renderEventGrid(competitions, competitionsGrid);
     renderEventGrid(events, eventsGrid);
 }
@@ -140,7 +324,7 @@ function renderEventGrid(events, container) {
         `;
         return;
     }
-    
+
     container.innerHTML = events.map(event => createEventCard(event)).join('');
 }
 
@@ -153,10 +337,10 @@ function createEventCard(event) {
         month: 'long',
         day: 'numeric'
     });
-    
+
     const modalityIcon = getModalityIcon(event.modality);
     const typeLabel = getTypeLabel(event.type);
-    
+
     return `
         <div class="event-card">
             <div class="event-category category-${event.category}">
@@ -196,7 +380,7 @@ function createEventCard(event) {
 
 // Obtener icono de modalidad
 function getModalityIcon(modality) {
-    switch(modality) {
+    switch (modality) {
         case 'presencial':
             return 'fas fa-building';
         case 'virtual':
@@ -250,9 +434,9 @@ function showError(message) {
             </div>
         </div>
     `;
-    
+
     document.body.insertBefore(errorDiv, document.body.firstChild);
-    
+
     setTimeout(() => {
         if (errorDiv.parentNode) {
             errorDiv.parentNode.removeChild(errorDiv);
@@ -261,14 +445,123 @@ function showError(message) {
 }
 
 // Limpiar filtros
-function clearFilters() {
+async function clearFilters() {
     searchInput.value = '';
     categoryFilter.value = '';
     modalityFilter.value = '';
     organizationFilter.value = '';
-    
-    filteredEvents = [...allEvents];
-    renderEvents();
+
+    try {
+        showLoading();
+        const response = await fetch(API_ENDPOINTS.events, {
+            method: 'GET',
+            headers: API_CONFIG.headers
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        filteredEvents = data.results ? data.results : data;
+        allEvents = [...filteredEvents];
+        renderEvents();
+        hideLoading();
+    } catch (error) {
+        console.error('Error clearing filters:', error);
+        hideLoading();
+        showError('Error al limpiar filtros.');
+    }
+}
+
+// Obtener un evento específico por ID
+async function getEventById(id) {
+    try {
+        const response = await fetch(API_ENDPOINTS.eventById(id), {
+            method: 'GET',
+            headers: API_CONFIG.headers
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching event by ID:', error);
+        throw error;
+    }
+}
+
+// Obtener eventos por categoría usando Django endpoint
+async function getEventsByCategory(category) {
+    try {
+        const url = `${API_ENDPOINTS.filter}?category=${encodeURIComponent(category)}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: API_CONFIG.headers
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.results ? data.results : data;
+    } catch (error) {
+        console.error('Error fetching events by category:', error);
+        throw error;
+    }
+}
+
+// Obtener eventos por modalidad usando Django endpoint
+async function getEventsByModality(modality) {
+    try {
+        const url = `${API_ENDPOINTS.filter}?modality=${encodeURIComponent(modality)}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: API_CONFIG.headers
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.results ? data.results : data;
+    } catch (error) {
+        console.error('Error fetching events by modality:', error);
+        throw error;
+    }
+}
+
+// Obtener eventos por organización usando Django endpoint
+async function getEventsByOrganization(organization) {
+    try {
+        const url = `${API_ENDPOINTS.filter}?organization=${encodeURIComponent(organization)}`;
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: API_CONFIG.headers
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.results ? data.results : data;
+    } catch (error) {
+        console.error('Error fetching events by organization:', error);
+        throw error;
+    }
+}
+
+// Mostrar indicador de carga
+function showLoading() {
+    const loadingElement = document.getElementById('loading');
+    if (loadingElement) {
+        loadingElement.style.display = 'block';
+    } else {
+        const loading = document.createElement('div');
+        loading.id = 'loading';
+        loading.className = 'loading-spinner';
+        loading.innerHTML = `
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p>Cargando eventos...</p>
+            </div>
+        `;
+        document.body.appendChild(loading);
+    }
+}
+
+// Ocultar indicador de carga
+function hideLoading() {
+    const loadingElement = document.getElementById('loading');
+    if (loadingElement) {
+        loadingElement.style.display = 'none';
+    }
 }
 
 // Obtener estadísticas
@@ -277,7 +570,7 @@ function getEventStats() {
     const competitions = allEvents.filter(event => event.category === 'competencia').length;
     const events = allEvents.filter(event => event.category === 'evento').length;
     const organizations = [...new Set(allEvents.map(event => event.organization))].length;
-    
+
     return {
         total: totalEvents,
         competitions: competitions,
@@ -289,10 +582,10 @@ function getEventStats() {
 // Función para exportar eventos (funcionalidad adicional)
 function exportEvents() {
     const dataStr = JSON.stringify(filteredEvents, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
     const exportFileDefaultName = 'eventos_tech.json';
-    
+
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
@@ -302,12 +595,12 @@ function exportEvents() {
 // Actualizar estadísticas en tiempo real
 function updateStats() {
     const stats = getEventStats();
-    
+
     // Actualizar contadores si existen en el DOM
     const totalCounter = document.querySelector('.stat:nth-child(1) h3');
     const participantsCounter = document.querySelector('.stat:nth-child(2) h3');
     const organizationsCounter = document.querySelector('.stat:nth-child(3) h3');
-    
+
     if (totalCounter) totalCounter.textContent = stats.total + '+';
     if (organizationsCounter) organizationsCounter.textContent = stats.organizations + '+';
 }
@@ -341,7 +634,7 @@ const observer = new IntersectionObserver((entries) => {
 }, observerOptions);
 
 // Observar elementos cuando se cargan
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => {
         document.querySelectorAll('.event-card').forEach(card => {
             observer.observe(card);
@@ -358,7 +651,7 @@ function scrollToTop() {
 }
 
 // Agregar botón de scroll to top
-window.addEventListener('scroll', function() {
+window.addEventListener('scroll', function () {
     const scrollButton = document.getElementById('scrollToTop');
     if (window.pageYOffset > 300) {
         if (!scrollButton) {
@@ -386,7 +679,7 @@ function shareEvent(eventId) {
             text: event.description,
             url: window.location.href
         };
-        
+
         if (navigator.share) {
             navigator.share(shareData);
         } else {
@@ -397,7 +690,7 @@ function shareEvent(eventId) {
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            
+
             alert('Información del evento copiada al portapapeles');
         }
     }
@@ -409,9 +702,197 @@ function addToCalendar(eventId) {
     if (event) {
         const startDate = new Date(event.date + 'T' + event.time);
         const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2 horas después
-        
+
         const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.name)}&dates=${startDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}/${endDate.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}&details=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.location || 'Online')}`;
-        
+
         window.open(calendarUrl, '_blank');
+    }
+}
+
+// Verificar estado de conexión con Django backend
+async function checkServerStatus() {
+    try {
+        const response = await fetch(`${API_CONFIG.baseURL}/`, {
+            method: 'HEAD',
+            headers: API_CONFIG.headers,
+            timeout: 5000
+        });
+        return response.ok;
+    } catch (error) {
+        return false;
+    }
+}
+
+// Mostrar estado de conexión
+function showConnectionStatus(isOnline) {
+    const statusElement = document.getElementById('connectionStatus');
+    if (statusElement) {
+        statusElement.remove();
+    }
+
+    const status = document.createElement('div');
+    status.id = 'connectionStatus';
+    status.className = `connection-status ${isOnline ? 'online' : 'offline'}`;
+    status.innerHTML = `
+        <i class="fas fa-${isOnline ? 'wifi' : 'exclamation-triangle'}"></i>
+        ${isOnline ? 'Conectado al backend Django' : 'Backend Django no disponible'}
+    `;
+
+    document.body.appendChild(status);
+
+    // Auto-ocultar después de 3 segundos si está online
+    if (isOnline) {
+        setTimeout(() => {
+            if (status.parentNode) {
+                status.parentNode.removeChild(status);
+            }
+        }, 3000);
+    }
+}
+
+// Monitorear conexión periódicamente
+function startConnectionMonitoring() {
+    checkServerStatus().then(isOnline => {
+        showConnectionStatus(isOnline);
+    });
+
+    // Verificar cada 30 segundos
+    setInterval(async () => {
+        const isOnline = await checkServerStatus();
+        const currentStatus = document.getElementById('connectionStatus');
+
+        if (!isOnline && !currentStatus) {
+            showConnectionStatus(false);
+        } else if (isOnline && currentStatus && currentStatus.classList.contains('offline')) {
+            showConnectionStatus(true);
+        }
+    }, 30000);
+}
+
+// Función para refrescar datos
+async function refreshData() {
+    try {
+        showLoading();
+        await loadEvents();
+        hideLoading();
+
+        // Mostrar mensaje de éxito
+        const successMessage = document.createElement('div');
+        successMessage.className = 'success-message';
+        successMessage.innerHTML = `
+            <div class="container">
+                <div class="success-content">
+                    <i class="fas fa-check-circle"></i>
+                    <p>Datos actualizados exitosamente</p>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(successMessage);
+
+        setTimeout(() => {
+            if (successMessage.parentNode) {
+                successMessage.parentNode.removeChild(successMessage);
+            }
+        }, 2000);
+
+    } catch (error) {
+        console.error('Error refreshing data:', error);
+        showError('Error al actualizar los datos.');
+    }
+}
+
+// Inicializar monitoreo de conexión cuando se carga la página
+document.addEventListener('DOMContentLoaded', function () {
+    startConnectionMonitoring();
+});
+
+// ==================== CONFIGURACIÓN Y AUTENTICACIÓN ====================
+
+// Configurar token de autenticación (si es necesario)
+function setAuthToken(token) {
+    if (token) {
+        API_CONFIG.headers['Authorization'] = `Bearer ${token}`;
+    } else {
+        delete API_CONFIG.headers['Authorization'];
+    }
+}
+
+// Configurar URL base de la API
+function setAPIBaseURL(baseURL) {
+    API_CONFIG.baseURL = baseURL;
+
+    // Actualizar todos los endpoints
+    Object.keys(API_ENDPOINTS).forEach(key => {
+        if (typeof API_CONFIG.endpoints[key] === 'string') {
+            API_ENDPOINTS[key] = `${baseURL}${API_CONFIG.endpoints[key]}`;
+        }
+    });
+}
+
+// Obtener configuración actual de la API
+function getAPIConfig() {
+    return {
+        baseURL: API_CONFIG.baseURL,
+        endpoints: { ...API_CONFIG.endpoints },
+        headers: { ...API_CONFIG.headers }
+    };
+}
+
+// Función para manejar errores de API de forma consistente
+function handleAPIError(error, context = 'API') {
+    console.error(`Error in ${context}:`, error);
+
+    if (error.message.includes('404')) {
+        showError(`${context}: Endpoint no encontrado. Verifica la configuración del backend.`);
+    } else if (error.message.includes('401')) {
+        showError(`${context}: No autorizado. Verifica tu token de acceso.`);
+    } else if (error.message.includes('403')) {
+        showError(`${context}: Acceso prohibido. No tienes permisos para esta acción.`);
+    } else if (error.message.includes('500')) {
+        showError(`${context}: Error interno del servidor. Contacta al administrador.`);
+    } else if (error.name === 'NetworkError' || error.message.includes('fetch')) {
+        showError(`${context}: Error de conexión. Verifica que el backend esté funcionando.`);
+    } else {
+        showError(`${context}: ${error.message}`);
+    }
+}
+
+// ==================== FUNCIONES UTILITARIAS PARA DRF ====================
+
+// Crear query parameters para Django Rest Framework
+function createDRFParams(filters) {
+    const params = new URLSearchParams();
+
+    Object.keys(filters).forEach(key => {
+        if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
+            params.append(key, filters[key]);
+        }
+    });
+
+    return params;
+}
+
+// Hacer petición a Django Rest Framework con manejo de errores
+async function makeDRFRequest(url, options = {}) {
+    const defaultOptions = {
+        method: 'GET',
+        headers: { ...API_CONFIG.headers }
+    };
+
+    const requestOptions = { ...defaultOptions, ...options };
+
+    try {
+        const response = await fetch(url, requestOptions);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        handleAPIError(error, 'DRF Request');
+        throw error;
     }
 }

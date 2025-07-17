@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIHWEC - Test API Django Rest Framework</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .result {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            min-height: 50px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            border-left: 4px solid #28a745;
+            background: #d4edda;
+        }
+
+        .error {
+            border-left: 4px solid #dc3545;
+            background: #f8d7da;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .config-section {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+            width: 300px;
+        }
+
+        .endpoint-info {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>LIHWEC - Test API Django Rest Framework</h1>
+        <p>Esta página permite probar los endpoints de tu backend Django Rest Framework.</p>
+
+        <div class="config-section">
+            <h3>Configuración de la API</h3>
+            <label for="apiBaseURL">URL Base de la API:</label>
+            <input type="text" id="apiBaseURL" value="http://localhost:8000/api"
+                placeholder="http://localhost:8000/api">
+            <button onclick="updateAPIConfig()">Actualizar</button>
+            <div class="endpoint-info">
+                Ejemplo: http://localhost:8000/api o https://tu-dominio.com/api
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Estado del servidor Django</h3>
+            <button onclick="testServerStatus()">Test Server Status</button>
+            <div class="endpoint-info">Endpoint: GET {BASE_URL}/</div>
+            <div id="result1" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Obtener todos los eventos</h3>
+            <button onclick="testGetAllEvents()">Test GET /events/</button>
+            <div class="endpoint-info">Endpoint: GET {BASE_URL}/events/</div>
+            <div id="result2" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Obtener evento por ID</h3>
+            <input type="number" id="eventId" placeholder="ID del evento" value="1">
+            <button onclick="testGetEventById()">Test GET /events/{id}/</button>
+            <div class="endpoint-info">Endpoint: GET {BASE_URL}/events/{id}/</div>
+            <div id="result3" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Buscar eventos</h3>
+            <input type="text" id="searchQuery" placeholder="Término de búsqueda" value="hackathon">
+            <button onclick="testSearchEvents()">Test GET /events/search/</button>
+            <div class="endpoint-info">Endpoint: GET {BASE_URL}/events/search/?q={query}</div>
+            <div id="result4" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Filtrar eventos por categoría</h3>
+            <select id="categorySelect">
+                <option value="competencia">Competencia</option>
+                <option value="evento">Evento</option>
+            </select>
+            <button onclick="testFilterByCategory()">Test Filter by Category</button>
+            <div class="endpoint-info">Endpoint: GET {BASE_URL}/events/filter/?category={category}</div>
+            <div id="result5" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. Filtrar eventos por modalidad</h3>
+            <select id="modalitySelect">
+                <option value="virtual">Virtual</option>
+                <option value="presencial">Presencial</option>
+                <option value="hibrido">Híbrido</option>
+            </select>
+            <button onclick="testFilterByModality()">Test Filter by Modality</button>
+            <div class="endpoint-info">Endpoint: GET {BASE_URL}/events/filter/?modality={modality}</div>
+            <div id="result6" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>7. Obtener organizaciones</h3>
+            <button onclick="testGetOrganizations()">Test GET /organizations/</button>
+            <div class="endpoint-info">Endpoint: GET {BASE_URL}/organizations/</div>
+            <div id="result7" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>8. Obtener categorías</h3>
+            <button onclick="testGetCategories()">Test GET /categories/</button>
+            <div class="endpoint-info">Endpoint: GET {BASE_URL}/categories/</div>
+            <div id="result8" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>9. Filtros combinados</h3>
+            <input type="text" id="combinedSearch" placeholder="Búsqueda" value="">
+            <select id="combinedCategory">
+                <option value="">Todas las categorías</option>
+                <option value="competencia">Competencia</option>
+                <option value="evento">Evento</option>
+            </select>
+            <select id="combinedModality">
+                <option value="">Todas las modalidades</option>
+                <option value="virtual">Virtual</option>
+                <option value="presencial">Presencial</option>
+                <option value="hibrido">Híbrido</option>
+            </select>
+            <button onclick="testCombinedFilters()">Test Combined Filters</button>
+            <div class="endpoint-info">Endpoint: GET
+                {BASE_URL}/events/filter/?search={search}&category={category}&modality={modality}</div>
+            <div id="result9" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let API_BASE_URL = 'http://localhost:8000/api';
+
+        function updateAPIConfig() {
+            API_BASE_URL = document.getElementById('apiBaseURL').value;
+            updateEndpointInfo();
+        }
+
+        function updateEndpointInfo() {
+            document.querySelectorAll('.endpoint-info').forEach(el => {
+                el.textContent = el.textContent.replace(/\{BASE_URL\}/g, API_BASE_URL);
+            });
+        }
+
+        async function makeRequest(url, resultId, description) {
+            const result = document.getElementById(resultId);
+            result.textContent = 'Cargando...';
+            result.className = 'result';
+
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const itemCount = Array.isArray(data) ? data.length :
+                        (data.results ? data.results.length : 'N/A');
+                    const totalCount = data.count || itemCount;
+
+                    result.textContent = `✅ ${description}\n` +
+                        `Status: ${response.status}\n` +
+                        `Items: ${itemCount}/${totalCount}\n\n` +
+                        JSON.stringify(data, null, 2);
+                    result.className = 'result success';
+                } else {
+                    result.textContent = `❌ Error ${response.status}: ${data.detail || 'Error desconocido'}\n\n` +
+                        JSON.stringify(data, null, 2);
+                    result.className = 'result error';
+                }
+            } catch (error) {
+                result.textContent = `❌ Error de conexión: ${error.message}\n\n` +
+                    `Verifica que Django esté ejecutándose en: ${API_BASE_URL}`;
+                result.className = 'result error';
+            }
+        }
+
+        async function testServerStatus() {
+            await makeRequest(`${API_BASE_URL}/`, 'result1', 'Servidor Django disponible');
+        }
+
+        async function testGetAllEvents() {
+            await makeRequest(`${API_BASE_URL}/events/`, 'result2', 'Eventos obtenidos');
+        }
+
+        async function testGetEventById() {
+            const eventId = document.getElementById('eventId').value || 1;
+            await makeRequest(`${API_BASE_URL}/events/${eventId}/`, 'result3', `Evento ${eventId} obtenido`);
+        }
+
+        async function testSearchEvents() {
+            const query = document.getElementById('searchQuery').value || 'hackathon';
+            await makeRequest(`${API_BASE_URL}/events/search/?q=${encodeURIComponent(query)}`, 'result4', `Búsqueda: "${query}"`);
+        }
+
+        async function testFilterByCategory() {
+            const category = document.getElementById('categorySelect').value;
+            await makeRequest(`${API_BASE_URL}/events/filter/?category=${category}`, 'result5', `Filtro por categoría: ${category}`);
+        }
+
+        async function testFilterByModality() {
+            const modality = document.getElementById('modalitySelect').value;
+            await makeRequest(`${API_BASE_URL}/events/filter/?modality=${modality}`, 'result6', `Filtro por modalidad: ${modality}`);
+        }
+
+        async function testGetOrganizations() {
+            await makeRequest(`${API_BASE_URL}/organizations/`, 'result7', 'Organizaciones obtenidas');
+        }
+
+        async function testGetCategories() {
+            await makeRequest(`${API_BASE_URL}/categories/`, 'result8', 'Categorías obtenidas');
+        }
+
+        async function testCombinedFilters() {
+            const search = document.getElementById('combinedSearch').value;
+            const category = document.getElementById('combinedCategory').value;
+            const modality = document.getElementById('combinedModality').value;
+
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (category) params.append('category', category);
+            if (modality) params.append('modality', modality);
+
+            const url = `${API_BASE_URL}/events/filter/?${params.toString()}`;
+            await makeRequest(url, 'result9', 'Filtros combinados aplicados');
+        }
+
+        // Inicializar la página
+        document.addEventListener('DOMContentLoaded', function () {
+            updateEndpointInfo();
+        });
+    </script>
+</body>
+
+</html>

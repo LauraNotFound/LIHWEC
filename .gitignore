@@ -1,0 +1,36 @@
+# Archivos de configuración local
+config.local.js
+
+# Archivos de desarrollo
+.env
+.env.local
+
+# Archivos temporales
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Carpetas de dependencias (por si se agregan en el futuro)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archivos de IDE
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+
+# Archivos de backup
+*.bak
+*.backup
+
+# Archivos de prueba temporales
+test-data/
+temp-files/
