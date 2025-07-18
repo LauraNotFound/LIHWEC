@@ -70,7 +70,9 @@ const LIHWEC_CONFIG = {
             enableDebug: true
         },
         'github-pages': {
-            apiURL: 'http://127.0.0.1:8080/api', // Cambia por tu URL de producción
+            // Para GitHub Pages, necesitas usar un túnel público como ngrok
+            // o desplegar el backend en un servicio como Render
+            apiURL: 'https://tu-backend-render.onrender.com/api', // URL del backend desplegado
             enableCORS: false,
             enableDebug: false
         },
