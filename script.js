@@ -2,33 +2,18 @@
 let allEvents = [];
 let filteredEvents = [];
 
-// Configuración de la API - Django Rest Framework
-const API_CONFIG = {
-    baseURL: 'http://127.0.0.1:8080/api', // URL base del backend Django
-    endpoints: {
-        events: '/events/',
-        eventDetail: (id) => `/events/${id}/`,
-        categories: '/categories/',
-        organizations: '/organizations/',
-        search: '/events/search/',
-        filter: '/events/filter/'
-    },
-    headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        // Agregar aquí token de autenticación si es necesario
-        // 'Authorization': 'Bearer <token>'
-    }
-};
+// Obtener configuración desde config.js
+const APP_CONFIG = getCurrentConfig();
+setupCORS(); // Configurar CORS si es necesario
 
-// URLs completas de los endpoints
+// URLs completas de los endpoints usando la configuración centralizada
 const API_ENDPOINTS = {
-    events: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.events}`,
-    eventById: (id) => `${API_CONFIG.baseURL}${API_CONFIG.endpoints.eventDetail(id)}`,
-    categories: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.categories}`,
-    organizations: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.organizations}`,
-    search: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.search}`,
-    filter: `${API_CONFIG.baseURL}${API_CONFIG.endpoints.filter}`
+    events: `${APP_CONFIG.api.baseURL}${APP_CONFIG.api.endpoints.events}`,
+    eventById: (id) => `${APP_CONFIG.api.baseURL}${APP_CONFIG.api.endpoints.eventDetail(id)}`,
+    categories: `${APP_CONFIG.api.baseURL}${APP_CONFIG.api.endpoints.categories}`,
+    organizations: `${APP_CONFIG.api.baseURL}${APP_CONFIG.api.endpoints.organizations}`,
+    search: `${APP_CONFIG.api.baseURL}${APP_CONFIG.api.endpoints.eventSearch}`,
+    filter: `${APP_CONFIG.api.baseURL}${APP_CONFIG.api.endpoints.eventFilter}`
 };
 
 // Elementos del DOM
@@ -52,7 +37,7 @@ async function loadEvents() {
         showLoading();
         const response = await fetch(API_ENDPOINTS.events, {
             method: 'GET',
-            headers: API_CONFIG.headers
+            headers: APP_CONFIG.api.headers
         });
 
         if (!response.ok) {
@@ -82,7 +67,7 @@ async function loadEvents() {
     } catch (error) {
         console.error('Error loading events:', error);
         hideLoading();
-        showError('Error al cargar los eventos. Asegúrate de que el backend Django esté ejecutándose en el puerto 8000.');
+        showError('Error al cargar los eventos. Asegúrate de que el backend Django esté ejecutándose.');
     }
 }
 
@@ -122,7 +107,7 @@ async function loadOrganizations() {
         // Intentar cargar desde endpoint dedicado
         const response = await fetch(API_ENDPOINTS.organizations, {
             method: 'GET',
-            headers: API_CONFIG.headers
+            headers: APP_CONFIG.api.headers
         });
 
         let organizations = [];
@@ -172,7 +157,7 @@ async function handleSearch() {
             // Si no hay término de búsqueda, cargar todos los eventos
             const response = await fetch(API_ENDPOINTS.events, {
                 method: 'GET',
-                headers: API_CONFIG.headers
+                headers: APP_CONFIG.api.headers
             });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -183,7 +168,7 @@ async function handleSearch() {
             const searchURL = `${API_ENDPOINTS.search}?q=${encodeURIComponent(searchTerm)}`;
             const response = await fetch(searchURL, {
                 method: 'GET',
-                headers: API_CONFIG.headers
+                headers: APP_CONFIG.api.headers
             });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -245,7 +230,7 @@ async function applyFilters() {
 
         const response = await fetch(url, {
             method: 'GET',
-            headers: API_CONFIG.headers
+            headers: APP_CONFIG.api.headers
         });
 
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -455,7 +440,7 @@ async function clearFilters() {
         showLoading();
         const response = await fetch(API_ENDPOINTS.events, {
             method: 'GET',
-            headers: API_CONFIG.headers
+            headers: APP_CONFIG.api.headers
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
@@ -476,7 +461,7 @@ async function getEventById(id) {
     try {
         const response = await fetch(API_ENDPOINTS.eventById(id), {
             method: 'GET',
-            headers: API_CONFIG.headers
+            headers: APP_CONFIG.api.headers
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
@@ -492,7 +477,7 @@ async function getEventsByCategory(category) {
         const url = `${API_ENDPOINTS.filter}?category=${encodeURIComponent(category)}`;
         const response = await fetch(url, {
             method: 'GET',
-            headers: API_CONFIG.headers
+            headers: APP_CONFIG.api.headers
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
@@ -509,7 +494,7 @@ async function getEventsByModality(modality) {
         const url = `${API_ENDPOINTS.filter}?modality=${encodeURIComponent(modality)}`;
         const response = await fetch(url, {
             method: 'GET',
-            headers: API_CONFIG.headers
+            headers: APP_CONFIG.api.headers
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
@@ -526,7 +511,7 @@ async function getEventsByOrganization(organization) {
         const url = `${API_ENDPOINTS.filter}?organization=${encodeURIComponent(organization)}`;
         const response = await fetch(url, {
             method: 'GET',
-            headers: API_CONFIG.headers
+            headers: APP_CONFIG.api.headers
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
@@ -712,9 +697,9 @@ function addToCalendar(eventId) {
 // Verificar estado de conexión con Django backend
 async function checkServerStatus() {
     try {
-        const response = await fetch(`${API_CONFIG.baseURL}/`, {
+        const response = await fetch(`${APP_CONFIG.api.baseURL}/`, {
             method: 'HEAD',
-            headers: API_CONFIG.headers,
+            headers: APP_CONFIG.api.headers,
             timeout: 5000
         });
         return response.ok;
@@ -812,20 +797,20 @@ document.addEventListener('DOMContentLoaded', function () {
 // Configurar token de autenticación (si es necesario)
 function setAuthToken(token) {
     if (token) {
-        API_CONFIG.headers['Authorization'] = `Bearer ${token}`;
+        APP_CONFIG.api.headers['Authorization'] = `Bearer ${token}`;
     } else {
-        delete API_CONFIG.headers['Authorization'];
+        delete APP_CONFIG.api.headers['Authorization'];
     }
 }
 
 // Configurar URL base de la API
 function setAPIBaseURL(baseURL) {
-    API_CONFIG.baseURL = baseURL;
+    APP_CONFIG.api.baseURL = baseURL;
 
     // Actualizar todos los endpoints
     Object.keys(API_ENDPOINTS).forEach(key => {
-        if (typeof API_CONFIG.endpoints[key] === 'string') {
-            API_ENDPOINTS[key] = `${baseURL}${API_CONFIG.endpoints[key]}`;
+        if (typeof APP_CONFIG.api.endpoints[key] === 'string') {
+            API_ENDPOINTS[key] = `${baseURL}${APP_CONFIG.api.endpoints[key]}`;
         }
     });
 }
@@ -833,9 +818,9 @@ function setAPIBaseURL(baseURL) {
 // Obtener configuración actual de la API
 function getAPIConfig() {
     return {
-        baseURL: API_CONFIG.baseURL,
-        endpoints: { ...API_CONFIG.endpoints },
-        headers: { ...API_CONFIG.headers }
+        baseURL: APP_CONFIG.api.baseURL,
+        endpoints: { ...APP_CONFIG.api.endpoints },
+        headers: { ...APP_CONFIG.api.headers }
     };
 }
 
@@ -877,7 +862,7 @@ function createDRFParams(filters) {
 async function makeDRFRequest(url, options = {}) {
     const defaultOptions = {
         method: 'GET',
-        headers: { ...API_CONFIG.headers }
+        headers: { ...APP_CONFIG.api.headers }
     };
 
     const requestOptions = { ...defaultOptions, ...options };
