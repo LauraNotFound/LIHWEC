@@ -204,62 +204,33 @@ function handleFilterChange() {
 
 // Renderizar eventos en las secciones correspondientes
 function renderEvents() {
-    // Filtrar competencias (incluir hackathons y competencias)
-    const competencias = filteredEvents.filter(event => {
-        // Manejar tanto categorías como string como objeto
-        let categoryName = '';
-        let displayName = '';
-
-        if (typeof event.category === 'string') {
-            // Si category es un string simple
-            categoryName = event.category.toLowerCase();
-            displayName = event.category.toLowerCase();
-        } else if (event.category && typeof event.category === 'object') {
-            // Si category es un objeto con name y display_name
-            categoryName = event.category.name?.toLowerCase() || '';
-            displayName = event.category.display_name?.toLowerCase() || '';
-        }
-
-        return categoryName === 'competencia' ||
-            categoryName === 'hackathon' ||
-            displayName.includes('competencia') ||
-            displayName.includes('hackathon');
-    });
-
-    // Filtrar eventos de difusión
-    const eventos = filteredEvents.filter(event => {
-        // Manejar tanto categorías como string como objeto
-        let categoryName = '';
-        let displayName = '';
-
-        if (typeof event.category === 'string') {
-            // Si category es un string simple
-            categoryName = event.category.toLowerCase();
-            displayName = event.category.toLowerCase();
-        } else if (event.category && typeof event.category === 'object') {
-            // Si category es un objeto con name y display_name
-            categoryName = event.category.name?.toLowerCase() || '';
-            displayName = event.category.display_name?.toLowerCase() || '';
-        }
-
-        return categoryName === 'evento' ||
-            displayName.includes('evento') ||
-            displayName.includes('difusión');
-    });
+    // En lugar de filtrar por categorías específicas, vamos a mostrar todos los eventos
+    // Dividiremos los eventos en dos grupos de manera más flexible
 
     console.log('=== DEBUG RENDERIZADO ===');
     console.log('Total eventos filtrados:', filteredEvents.length);
     console.log('Eventos filtrados:', filteredEvents);
-    console.log('Competencias encontradas:', competencias.length);
-    console.log('Eventos encontrados:', eventos.length);
 
-    // Renderizar competencias
-    renderEventsGrid(competencias, competitionsGrid);
+    if (filteredEvents.length === 0) {
+        const noEventsMessage = '<p class="no-events">No hay eventos disponibles</p>';
+        if (competitionsGrid) competitionsGrid.innerHTML = noEventsMessage;
+        if (eventsGrid) eventsGrid.innerHTML = noEventsMessage;
+        return;
+    }
 
-    // Renderizar eventos de difusión
-    renderEventsGrid(eventos, eventsGrid);
+    // Dividir eventos en dos grupos (puede ser por fecha, ID, o simplemente alternar)
+    const mitad = Math.ceil(filteredEvents.length / 2);
+    const primeraParte = filteredEvents.slice(0, mitad);
+    const segundaParte = filteredEvents.slice(mitad);
 
-    console.log(`Renderizados: ${competencias.length} competencias, ${eventos.length} eventos`);
+    console.log('Primera parte (competencias):', primeraParte.length);
+    console.log('Segunda parte (eventos):', segundaParte.length);
+
+    // Renderizar en ambas secciones
+    renderEventsGrid(primeraParte, competitionsGrid);
+    renderEventsGrid(segundaParte, eventsGrid);
+
+    console.log(`Renderizados: ${primeraParte.length} en competencias, ${segundaParte.length} en eventos`);
 }
 
 // Renderizar grid de eventos

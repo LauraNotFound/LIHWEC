@@ -3,7 +3,7 @@ const LIHWEC_CONFIG = {
     // Configuración de la API Django
     api: {
         // URL base del backend Django (cambiar según tu configuración)
-        baseURL: 'http://127.0.0.1:8080/api',
+        baseURL: 'http://127.0.0.1:8000/api',
 
         // Endpoints del backend Django Rest Framework
         endpoints: {
