@@ -71,7 +71,7 @@ const LIHWEC_CONFIG = {
         },
         'github-pages': {
             // URL del backend desplegado en Render
-            apiURL: 'https://tu-app-name.onrender.com/api', // Reemplaza con tu URL real
+            apiURL: 'https://lihwec-backend.onrender.com/api',
             enableCORS: false,
             enableDebug: false
         },
