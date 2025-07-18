@@ -72,6 +72,7 @@ async function loadEvents() {
         filteredEvents = [...allEvents];
 
         await loadOrganizations(); // Cargar organizaciones desde endpoint separado
+        await loadCategories(); // Cargar categorías desde endpoint separado
         renderEvents();
         hideLoading();
 
@@ -158,6 +159,57 @@ function populateOrganizationFilter(organizations) {
     });
 }
 
+// Cargar categorías desde endpoint de DRF
+async function loadCategories() {
+    try {
+        // Intentar cargar desde endpoint dedicado
+        const response = await fetch(API_ENDPOINTS.categories, {
+            method: 'GET',
+            headers: APP_CONFIG.api.headers
+        });
+
+        let categories = [];
+
+        if (response.ok) {
+            const data = await response.json();
+            categories = data.results ? data.results : data;
+        } else {
+            // Fallback: extraer categorías de los eventos cargados
+            categories = [...new Set(allEvents.map(event => event.category))].sort();
+        }
+
+        populateCategoryFilter(categories);
+    } catch (error) {
+        console.warn('Error loading categories from API, using fallback:', error);
+        // Fallback: extraer de los eventos
+        const categories = [...new Set(allEvents.map(event => event.category))].sort();
+        populateCategoryFilter(categories);
+    }
+}
+
+// Poblar el filtro de categorías
+function populateCategoryFilter(categories) {
+    // Limpiar opciones existentes (excepto la primera)
+    while (categoryFilter.children.length > 1) {
+        categoryFilter.removeChild(categoryFilter.lastChild);
+    }
+
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        // Si cat es un objeto de DRF, usar cat.name y cat.display_name
+        if (typeof cat === 'object' && cat.name) {
+            option.value = cat.name;
+            option.textContent = cat.display_name || cat.name;
+        } else {
+            // Fallback para strings directos
+            const catName = typeof cat === 'string' ? cat : cat.category;
+            option.value = catName;
+            option.textContent = catName;
+        }
+        categoryFilter.appendChild(option);
+    });
+}
+
 // Manejar búsqueda usando el endpoint de Django Rest Framework
 async function handleSearch() {
     const searchTerm = searchInput.value.toLowerCase().trim();
@@ -204,9 +256,6 @@ function handleFilterChange() {
 
 // Renderizar eventos en las secciones correspondientes
 function renderEvents() {
-    // En lugar de filtrar por categorías específicas, vamos a mostrar todos los eventos
-    // Dividiremos los eventos en dos grupos de manera más flexible
-
     console.log('=== DEBUG RENDERIZADO ===');
     console.log('Total eventos filtrados:', filteredEvents.length);
     console.log('Eventos filtrados:', filteredEvents);
@@ -218,19 +267,20 @@ function renderEvents() {
         return;
     }
 
-    // Dividir eventos en dos grupos (puede ser por fecha, ID, o simplemente alternar)
-    const mitad = Math.ceil(filteredEvents.length / 2);
-    const primeraParte = filteredEvents.slice(0, mitad);
-    const segundaParte = filteredEvents.slice(mitad);
+    // Filtrar por tipo: competencia y difusor
+    const competencias = filteredEvents.filter(event => event.type === 'competencia');
+    const difusores = filteredEvents.filter(event => event.type === 'difusor');
 
-    console.log('Primera parte (competencias):', primeraParte.length);
-    console.log('Segunda parte (eventos):', segundaParte.length);
+    console.log('Competencias encontradas:', competencias.length);
+    console.log('Eventos difusores encontrados:', difusores.length);
 
-    // Renderizar en ambas secciones
-    renderEventsGrid(primeraParte, competitionsGrid);
-    renderEventsGrid(segundaParte, eventsGrid);
+    // Renderizar competencias
+    renderEventsGrid(competencias, competitionsGrid);
 
-    console.log(`Renderizados: ${primeraParte.length} en competencias, ${segundaParte.length} en eventos`);
+    // Renderizar eventos difusores
+    renderEventsGrid(difusores, eventsGrid);
+
+    console.log(`Renderizados: ${competencias.length} competencias, ${difusores.length} eventos difusores`);
 }
 
 // Renderizar grid de eventos
