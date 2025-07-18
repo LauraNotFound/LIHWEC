@@ -34,36 +34,48 @@ document.addEventListener('DOMContentLoaded', function () {
 // Cargar eventos desde la API de Django Rest Framework
 async function loadEvents() {
     try {
+        console.log('=== INICIO CARGA DE EVENTOS ===');
+        console.log('APP_CONFIG:', APP_CONFIG);
+        console.log('API_ENDPOINTS:', API_ENDPOINTS);
+
         showLoading();
         const response = await fetch(API_ENDPOINTS.events, {
             method: 'GET',
             headers: APP_CONFIG.api.headers
         });
 
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('Data recibida:', data);
 
         // DRF puede devolver datos paginados o directamente la lista
         // Manejar ambos casos
         if (data.results) {
             // Respuesta paginada de DRF
             allEvents = data.results;
-            // TODO: Implementar paginación si es necesario
+            console.log('Datos paginados, eventos:', allEvents.length);
         } else if (Array.isArray(data)) {
             // Lista directa
             allEvents = data;
+            console.log('Lista directa, eventos:', allEvents.length);
         } else {
             throw new Error('Formato de respuesta inesperado');
         }
 
+        console.log('allEvents final:', allEvents);
         filteredEvents = [...allEvents];
 
         await loadOrganizations(); // Cargar organizaciones desde endpoint separado
         renderEvents();
         hideLoading();
+
+        console.log('=== FIN CARGA DE EVENTOS ===');
     } catch (error) {
         console.error('Error loading events:', error);
         hideLoading();
@@ -190,208 +202,165 @@ function handleFilterChange() {
     applyFilters();
 }
 
-// Aplicar filtros usando el endpoint de filtrado de Django Rest Framework
-async function applyFilters() {
-    try {
-        showLoading();
-
-        // Construir query parameters para Django Rest Framework
-        const params = new URLSearchParams();
-
-        // Filtro por categoría
-        const selectedCategory = categoryFilter.value;
-        if (selectedCategory) {
-            params.append('category', selectedCategory);
-        }
-
-        // Filtro por modalidad
-        const selectedModality = modalityFilter.value;
-        if (selectedModality) {
-            params.append('modality', selectedModality);
-        }
-
-        // Filtro por organización
-        const selectedOrganization = organizationFilter.value;
-        if (selectedOrganization) {
-            params.append('organization', selectedOrganization);
-        }
-
-        // Agregar término de búsqueda si existe
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        if (searchTerm) {
-            params.append('search', searchTerm);
-        }
-
-        // Construir URL con filtros
-        let url = API_ENDPOINTS.events;
-        if (params.toString()) {
-            url = `${API_ENDPOINTS.filter}?${params.toString()}`;
-        }
-
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: APP_CONFIG.api.headers
-        });
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-        const data = await response.json();
-        filteredEvents = data.results ? data.results : data;
-
-        renderEvents();
-        hideLoading();
-    } catch (error) {
-        console.error('Error applying filters:', error);
-        hideLoading();
-
-        // Fallback: aplicar filtros localmente
-        console.warn('Applying filters locally as fallback');
-        applyFiltersLocally();
-    }
-}
-
-// Aplicar filtros localmente como fallback
-function applyFiltersLocally() {
-    let filtered = [...allEvents];
-
-    // Filtro por categoría
-    const selectedCategory = categoryFilter.value;
-    if (selectedCategory) {
-        filtered = filtered.filter(event => event.category === selectedCategory);
-    }
-
-    // Filtro por modalidad
-    const selectedModality = modalityFilter.value;
-    if (selectedModality) {
-        filtered = filtered.filter(event => event.modality === selectedModality);
-    }
-
-    // Filtro por organización
-    const selectedOrganization = organizationFilter.value;
-    if (selectedOrganization) {
-        filtered = filtered.filter(event => event.organization === selectedOrganization);
-    }
-
-    // Aplicar filtro de búsqueda local
-    const searchTerm = searchInput.value.toLowerCase().trim();
-    if (searchTerm) {
-        filtered = filtered.filter(event =>
-            event.name.toLowerCase().includes(searchTerm) ||
-            event.organization.toLowerCase().includes(searchTerm) ||
-            event.location.toLowerCase().includes(searchTerm) ||
-            event.type.toLowerCase().includes(searchTerm)
-        );
-    }
-
-    filteredEvents = filtered;
-    renderEvents();
-    hideLoading();
-}
-
-// Renderizar eventos
+// Renderizar eventos en las secciones correspondientes
 function renderEvents() {
-    const competitions = filteredEvents.filter(event => event.category === 'competencia');
-    const events = filteredEvents.filter(event => event.category === 'evento');
+    // Filtrar competencias (incluir hackathons y competencias)
+    const competencias = filteredEvents.filter(event => {
+        // Manejar tanto categorías como string como objeto
+        let categoryName = '';
+        let displayName = '';
 
-    renderEventGrid(competitions, competitionsGrid);
-    renderEventGrid(events, eventsGrid);
+        if (typeof event.category === 'string') {
+            // Si category es un string simple
+            categoryName = event.category.toLowerCase();
+            displayName = event.category.toLowerCase();
+        } else if (event.category && typeof event.category === 'object') {
+            // Si category es un objeto con name y display_name
+            categoryName = event.category.name?.toLowerCase() || '';
+            displayName = event.category.display_name?.toLowerCase() || '';
+        }
+
+        return categoryName === 'competencia' ||
+            categoryName === 'hackathon' ||
+            displayName.includes('competencia') ||
+            displayName.includes('hackathon');
+    });
+
+    // Filtrar eventos de difusión
+    const eventos = filteredEvents.filter(event => {
+        // Manejar tanto categorías como string como objeto
+        let categoryName = '';
+        let displayName = '';
+
+        if (typeof event.category === 'string') {
+            // Si category es un string simple
+            categoryName = event.category.toLowerCase();
+            displayName = event.category.toLowerCase();
+        } else if (event.category && typeof event.category === 'object') {
+            // Si category es un objeto con name y display_name
+            categoryName = event.category.name?.toLowerCase() || '';
+            displayName = event.category.display_name?.toLowerCase() || '';
+        }
+
+        return categoryName === 'evento' ||
+            displayName.includes('evento') ||
+            displayName.includes('difusión');
+    });
+
+    console.log('=== DEBUG RENDERIZADO ===');
+    console.log('Total eventos filtrados:', filteredEvents.length);
+    console.log('Eventos filtrados:', filteredEvents);
+    console.log('Competencias encontradas:', competencias.length);
+    console.log('Eventos encontrados:', eventos.length);
+
+    // Renderizar competencias
+    renderEventsGrid(competencias, competitionsGrid);
+
+    // Renderizar eventos de difusión
+    renderEventsGrid(eventos, eventsGrid);
+
+    console.log(`Renderizados: ${competencias.length} competencias, ${eventos.length} eventos`);
 }
 
 // Renderizar grid de eventos
-function renderEventGrid(events, container) {
-    if (events.length === 0) {
-        container.innerHTML = `
-            <div class="no-results">
-                <i class="fas fa-search"></i>
-                <h3>No se encontraron eventos</h3>
-                <p>Intenta ajustar tus filtros de búsqueda</p>
-            </div>
-        `;
+function renderEventsGrid(events, container) {
+    console.log('=== RENDERIZANDO GRID ===');
+    console.log('Container:', container);
+    console.log('Events:', events);
+
+    if (!container) {
+        console.error('Container no encontrado');
         return;
     }
 
-    container.innerHTML = events.map(event => createEventCard(event)).join('');
+    if (events.length === 0) {
+        container.innerHTML = '<p class="no-events">No hay eventos disponibles</p>';
+        console.log('No hay eventos para mostrar');
+        return;
+    }
+
+    const eventCards = events.map(event => {
+        console.log('Renderizando evento:', event);
+        return `
+        <div class="event-card">
+            <div class="event-image">
+                <img src="${event.image || 'https://via.placeholder.com/300x200'}" alt="${event.name}">
+                <div class="event-type">${event.type}</div>
+            </div>
+            <div class="event-content">
+                <h3>${event.name}</h3>
+                <p class="event-description">${event.description}</p>
+                <div class="event-details">
+                    <div class="event-date">
+                        <i class="fas fa-calendar"></i>
+                        ${formatDate(event.date)} ${formatTime(event.time)}
+                    </div>
+                    <div class="event-modality">
+                        <i class="fas fa-${getModalityIcon(event.modality)}"></i>
+                        ${event.modality}
+                    </div>
+                    <div class="event-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${event.location}
+                    </div>
+                    <div class="event-organization">
+                        <i class="fas fa-building"></i>
+                        ${typeof event.organization === 'string' ? event.organization : (event.organization?.name || 'N/A')}
+                    </div>
+                </div>
+                ${event.link ? `<a href="${event.link}" target="_blank" class="event-link">Más información</a>` : ''}
+            </div>
+        </div>
+    `}).join('');
+
+    container.innerHTML = eventCards;
+    console.log('Grid renderizado exitosamente');
 }
 
-// Crear tarjeta de evento
-function createEventCard(event) {
-    const eventDate = new Date(event.date);
-    const formattedDate = eventDate.toLocaleDateString('es-ES', {
-        weekday: 'long',
+// Formatear fecha
+function formatDate(dateString) {
+    if (!dateString) return 'Fecha no disponible';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
     });
+}
 
-    const modalityIcon = getModalityIcon(event.modality);
-    const typeLabel = getTypeLabel(event.type);
-
-    return `
-        <div class="event-card">
-            <div class="event-category category-${event.category}">
-                ${typeLabel}
-            </div>
-            <img src="${event.image}" alt="${event.name}" class="event-image">
-            <div class="event-content">
-                <h3 class="event-title">${event.name}</h3>
-                <div class="event-info">
-                    <span>
-                        <i class="fas fa-calendar-alt"></i>
-                        ${formattedDate}
-                    </span>
-                    <span>
-                        <i class="fas fa-clock"></i>
-                        ${event.time}
-                    </span>
-                    <span>
-                        <i class="${modalityIcon}"></i>
-                        ${capitalizeFirst(event.modality)}
-                    </span>
-                    ${event.location ? `
-                        <span>
-                            <i class="fas fa-map-marker-alt"></i>
-                            ${event.location}
-                        </span>
-                    ` : ''}
-                </div>
-                <p class="event-description">${event.description}</p>
-                <div class="event-organization">
-                    ${event.organization}
-                </div>
-            </div>
-        </div>
-    `;
+// Formatear hora
+function formatTime(timeString) {
+    if (!timeString) return '';
+    return timeString.slice(0, 5); // HH:MM
 }
 
 // Obtener icono de modalidad
 function getModalityIcon(modality) {
     switch (modality) {
-        case 'presencial':
-            return 'fas fa-building';
-        case 'virtual':
-            return 'fas fa-laptop';
-        case 'hibrido':
-            return 'fas fa-globe';
-        default:
-            return 'fas fa-question';
+        case 'virtual': return 'desktop';
+        case 'presencial': return 'users';
+        case 'hibrido': return 'globe';
+        default: return 'question';
     }
 }
 
-// Obtener etiqueta del tipo
-function getTypeLabel(type) {
-    const labels = {
-        'hackathon': 'Hackathon',
-        'programacion-competitiva': 'Programación Competitiva',
-        'workshop': 'Workshop',
-        'keynote': 'Keynote',
-        'open-day': 'Open Day'
-    };
-    return labels[type] || capitalizeFirst(type);
+// Mostrar mensaje de carga
+function showLoading() {
+    const loadingMessage = '<div class="loading">Cargando eventos...</div>';
+    if (competitionsGrid) competitionsGrid.innerHTML = loadingMessage;
+    if (eventsGrid) eventsGrid.innerHTML = loadingMessage;
 }
 
-// Capitalizar primera letra
-function capitalizeFirst(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+// Ocultar mensaje de carga
+function hideLoading() {
+    // La función renderEvents() reemplazará el contenido de carga
+}
+
+// Mostrar error
+function showError(message) {
+    const errorMessage = `<div class="error-message">⚠️ ${message}</div>`;
+    if (competitionsGrid) competitionsGrid.innerHTML = errorMessage;
+    if (eventsGrid) eventsGrid.innerHTML = errorMessage;
 }
 
 // Función debounce para optimizar la búsqueda
@@ -407,161 +376,103 @@ function debounce(func, wait) {
     };
 }
 
-// Mostrar error
-function showError(message) {
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error-message';
-    errorDiv.innerHTML = `
-        <div class="container">
-            <div class="error-content">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>${message}</p>
-            </div>
-        </div>
-    `;
+// Limpiar filtros
+function clearFilters() {
+    if (searchInput) searchInput.value = '';
+    if (categoryFilter) categoryFilter.value = '';
+    if (modalityFilter) modalityFilter.value = '';
+    if (organizationFilter) organizationFilter.value = '';
 
-    document.body.insertBefore(errorDiv, document.body.firstChild);
-
-    setTimeout(() => {
-        if (errorDiv.parentNode) {
-            errorDiv.parentNode.removeChild(errorDiv);
-        }
-    }, 5000);
+    // Resetear eventos filtrados
+    filteredEvents = [...allEvents];
+    renderEvents();
 }
 
-// Limpiar filtros
-async function clearFilters() {
-    searchInput.value = '';
-    categoryFilter.value = '';
-    modalityFilter.value = '';
-    organizationFilter.value = '';
+// Manejar filtros
+function handleFilterChange() {
+    applyFilters();
+}
 
+// Aplicar filtros usando el endpoint de filtrado de Django Rest Framework
+async function applyFilters() {
     try {
         showLoading();
-        const response = await fetch(API_ENDPOINTS.events, {
+
+        const params = new URLSearchParams();
+
+        // Obtener valores de filtros
+        const category = categoryFilter?.value || '';
+        const modality = modalityFilter?.value || '';
+        const organization = organizationFilter?.value || '';
+        const searchTerm = searchInput?.value?.toLowerCase()?.trim() || '';
+
+        // Construir parámetros
+        if (category) params.append('category', category);
+        if (modality) params.append('modality', modality);
+        if (organization) params.append('organization', organization);
+        if (searchTerm) params.append('search', searchTerm);
+
+        // Usar endpoint de filtros si hay parámetros, sino todos los eventos
+        let url = API_ENDPOINTS.events;
+        if (params.toString()) {
+            url = `${API_ENDPOINTS.filter}?${params.toString()}`;
+        }
+
+        const response = await fetch(url, {
             method: 'GET',
             headers: APP_CONFIG.api.headers
         });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const data = await response.json();
-        filteredEvents = data.results ? data.results : data;
-        allEvents = [...filteredEvents];
+        filteredEvents = data.results || data;
+
         renderEvents();
         hideLoading();
     } catch (error) {
-        console.error('Error clearing filters:', error);
+        console.error('Error applying filters:', error);
         hideLoading();
-        showError('Error al limpiar filtros.');
+        showError('Error al aplicar filtros. Intenta nuevamente.');
     }
 }
 
-// Obtener un evento específico por ID
-async function getEventById(id) {
-    try {
-        const response = await fetch(API_ENDPOINTS.eventById(id), {
-            method: 'GET',
-            headers: APP_CONFIG.api.headers
-        });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching event by ID:', error);
-        throw error;
-    }
-}
+// Manejar búsqueda
+async function handleSearch() {
+    const searchTerm = searchInput?.value?.toLowerCase()?.trim() || '';
 
-// Obtener eventos por categoría usando Django endpoint
-async function getEventsByCategory(category) {
+    if (!searchTerm) {
+        // Si no hay búsqueda, mostrar todos los eventos
+        filteredEvents = [...allEvents];
+        renderEvents();
+        return;
+    }
+
     try {
-        const url = `${API_ENDPOINTS.filter}?category=${encodeURIComponent(category)}`;
+        showLoading();
+
+        const url = `${API_ENDPOINTS.search}?q=${encodeURIComponent(searchTerm)}`;
         const response = await fetch(url, {
             method: 'GET',
             headers: APP_CONFIG.api.headers
         });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
-        return data.results ? data.results : data;
+        filteredEvents = data.results || data;
+
+        renderEvents();
+        hideLoading();
     } catch (error) {
-        console.error('Error fetching events by category:', error);
-        throw error;
+        console.error('Error searching:', error);
+        hideLoading();
+        showError('Error en la búsqueda. Intenta nuevamente.');
     }
-}
-
-// Obtener eventos por modalidad usando Django endpoint
-async function getEventsByModality(modality) {
-    try {
-        const url = `${API_ENDPOINTS.filter}?modality=${encodeURIComponent(modality)}`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: APP_CONFIG.api.headers
-        });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        return data.results ? data.results : data;
-    } catch (error) {
-        console.error('Error fetching events by modality:', error);
-        throw error;
-    }
-}
-
-// Obtener eventos por organización usando Django endpoint
-async function getEventsByOrganization(organization) {
-    try {
-        const url = `${API_ENDPOINTS.filter}?organization=${encodeURIComponent(organization)}`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: APP_CONFIG.api.headers
-        });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        return data.results ? data.results : data;
-    } catch (error) {
-        console.error('Error fetching events by organization:', error);
-        throw error;
-    }
-}
-
-// Mostrar indicador de carga
-function showLoading() {
-    const loadingElement = document.getElementById('loading');
-    if (loadingElement) {
-        loadingElement.style.display = 'block';
-    } else {
-        const loading = document.createElement('div');
-        loading.id = 'loading';
-        loading.className = 'loading-spinner';
-        loading.innerHTML = `
-            <div class="spinner-container">
-                <div class="spinner"></div>
-                <p>Cargando eventos...</p>
-            </div>
-        `;
-        document.body.appendChild(loading);
-    }
-}
-
-// Ocultar indicador de carga
-function hideLoading() {
-    const loadingElement = document.getElementById('loading');
-    if (loadingElement) {
-        loadingElement.style.display = 'none';
-    }
-}
-
-// Obtener estadísticas
-function getEventStats() {
-    const totalEvents = allEvents.length;
-    const competitions = allEvents.filter(event => event.category === 'competencia').length;
-    const events = allEvents.filter(event => event.category === 'evento').length;
-    const organizations = [...new Set(allEvents.map(event => event.organization))].length;
-
-    return {
-        total: totalEvents,
-        competitions: competitions,
-        events: events,
-        organizations: organizations
-    };
 }
 
 // Función para exportar eventos (funcionalidad adicional)
@@ -575,6 +486,45 @@ function exportEvents() {
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
+}
+
+// Obtener estadísticas
+function getEventStats() {
+    const totalEvents = allEvents.length;
+
+    // Contar competencias usando la lógica mejorada
+    const competitions = allEvents.filter(event => {
+        let categoryName = '';
+        if (typeof event.category === 'string') {
+            categoryName = event.category.toLowerCase();
+        } else if (event.category && typeof event.category === 'object') {
+            categoryName = event.category.name?.toLowerCase() || '';
+        }
+        return categoryName === 'competencia' || categoryName === 'hackathon';
+    }).length;
+
+    // Contar eventos usando la lógica mejorada
+    const events = allEvents.filter(event => {
+        let categoryName = '';
+        if (typeof event.category === 'string') {
+            categoryName = event.category.toLowerCase();
+        } else if (event.category && typeof event.category === 'object') {
+            categoryName = event.category.name?.toLowerCase() || '';
+        }
+        return categoryName === 'evento';
+    }).length;
+
+    // Contar organizaciones
+    const organizations = [...new Set(allEvents.map(event =>
+        typeof event.organization === 'string' ? event.organization : (event.organization?.name || 'N/A')
+    ))].length;
+
+    return {
+        total: totalEvents,
+        competitions: competitions,
+        events: events,
+        organizations: organizations
+    };
 }
 
 // Actualizar estadísticas en tiempo real

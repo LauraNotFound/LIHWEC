@@ -19,16 +19,6 @@ const LIHWEC_CONFIG = {
             // Organizaciones
             organizations: '/organizations/',
 
-            // Modalidades
-            modalities: '/modalities/',
-
-            // Estadísticas
-            stats: '/stats/',
-
-            // Autenticación (si es necesario)
-            login: '/auth/login/',
-            logout: '/auth/logout/',
-            profile: '/auth/profile/'
         },
 
         // Headers por defecto
@@ -113,15 +103,19 @@ function getCurrentConfig() {
             baseURL: LIHWEC_CONFIG.environments[env]?.apiURL || LIHWEC_CONFIG.environments.production.apiURL
         }
     };
-}// Función para configurar CORS si es necesario
+}
+
+// Función para configurar CORS si es necesario
 function setupCORS() {
     const config = getCurrentConfig();
 
     if (config.environments[config.currentEnvironment].enableCORS) {
-        // Agregar headers adicionales para CORS si es necesario
-        LIHWEC_CONFIG.api.headers['Access-Control-Allow-Origin'] = '*';
-        LIHWEC_CONFIG.api.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
-        LIHWEC_CONFIG.api.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
+        // IMPORTANTE: Los headers Access-Control-Allow-* son headers de RESPUESTA del servidor,
+        // NO se pueden enviar desde el navegador como headers de petición.
+        // Si necesitas configurar algo adicional para CORS, hazlo aquí.
+
+        // Por ahora, esta función no hace nada porque el CORS se maneja en el servidor Django
+        console.log('CORS configurado para entorno:', config.currentEnvironment);
     }
 }
 

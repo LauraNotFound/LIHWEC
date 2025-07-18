@@ -102,11 +102,11 @@
         <div class="config-section">
             <h3>Configuración de la API</h3>
             <label for="apiBaseURL">URL Base de la API:</label>
-            <input type="text" id="apiBaseURL" value="http://localhost:8000/api"
-                placeholder="http://localhost:8000/api">
+            <input type="text" id="apiBaseURL" value="http://127.0.0.1:8080/api"
+                placeholder="http://127.0.0.1:8080/api">
             <button onclick="updateAPIConfig()">Actualizar</button>
             <div class="endpoint-info">
-                Ejemplo: http://localhost:8000/api o https://tu-dominio.com/api
+                Ejemplo: http://127.0.0.1:8080/api o https://tu-dominio.com/api
             </div>
         </div>
 
@@ -199,7 +199,7 @@
     </div>
 
     <script>
-        let API_BASE_URL = 'http://localhost:8000/api';
+        let API_BASE_URL = 'http://127.0.0.1:8080/api';
 
         function updateAPIConfig() {
             API_BASE_URL = document.getElementById('apiBaseURL').value;
