@@ -70,7 +70,7 @@ const LIHWEC_CONFIG = {
             enableDebug: true
         },
         'github-pages': {
-            apiURL: 'https://tu-backend-django.herokuapp.com/api', // Cambia por tu URL de producción
+            apiURL: 'http://127.0.0.1:8080/api', // Cambia por tu URL de producción
             enableCORS: false,
             enableDebug: false
         },
