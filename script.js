@@ -315,7 +315,7 @@ function renderEventsGrid(events, container) {
                 <div class="event-details">
                     <div class="event-date">
                         <i class="fas fa-calendar"></i>
-                        ${formatDate(event.date)} ${formatTime(event.time)}
+                        ${formatDate(event.date)} a las ${formatTime(event.time)}h
                     </div>
                     <div class="event-modality">
                         <i class="fas fa-${getModalityIcon(event.modality)}"></i>

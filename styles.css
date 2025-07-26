@@ -284,6 +284,7 @@ main {
     box-sizing: border-box;
     background-color: rgba(0, 0, 0, 0.6); 
     color: #fff;
+    overflow: auto;
 }
 
 .event-card:hover .event-content {
