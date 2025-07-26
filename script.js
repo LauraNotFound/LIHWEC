@@ -303,10 +303,11 @@ function renderEventsGrid(events, container) {
     const eventCards = events.map(event => {
         console.log('Renderizando evento:', event);
         return `
-        <div class="event-card">
-            <div class="event-image">
+        <div class="event-card" style="cursor: pointer;">
+            <div class="event-image" >
                 <img src="${event.image || 'https://via.placeholder.com/300x200'}" alt="${event.name}">
-                <div class="event-type">${event.type}</div>
+                <!-- título vista previa -->
+                <h4>${event.name}</h4>
             </div>
             <div class="event-content">
                 <h3>${event.name}</h3>
@@ -324,12 +325,17 @@ function renderEventsGrid(events, container) {
                         <i class="fas fa-map-marker-alt"></i>
                         ${event.location}
                     </div>
+                    <div class="event-type">
+                        <i class="fas fa-person"></i>
+                        ${event.type}
+                    </div>
+
                     <div class="event-organization">
                         <i class="fas fa-building"></i>
                         ${typeof event.organization === 'string' ? event.organization : (event.organization?.name || 'N/A')}
                     </div>
+                    ${event.link ? `<a href="${event.link}" target="_blank" class="event-link">Más información</a>` : ''}
                 </div>
-                ${event.link ? `<a href="${event.link}" target="_blank" class="event-link">Más información</a>` : ''}
             </div>
         </div>
     `}).join('');

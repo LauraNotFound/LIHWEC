@@ -1,4 +1,4 @@
-/* Reset y configuración básica */
+/* Hacer reset*/
 * {
     margin: 0;
     padding: 0;
@@ -18,10 +18,9 @@ body {
     padding: 0 20px;
 }
 
-/* Header */
 header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    color: #fff;
     padding: 1rem 0;
     position: fixed;
     width: 100%;
@@ -58,7 +57,7 @@ nav ul {
 }
 
 nav a {
-    color: white;
+    color: #fff;
     text-decoration: none;
     font-weight: 500;
     transition: color 0.3s;
@@ -68,16 +67,18 @@ nav a:hover {
     color: #ffd700;
 }
 
-/* Main content */
 main {
     margin-top: 80px;
 }
 
-/* Hero section */
+.event-content i{
+    margin-right: 5px;
+}
+
 .hero {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 100px 0;
+    color: #fff;
+    padding: 75px 0;
     text-align: center;
 }
 
@@ -89,7 +90,7 @@ main {
 
 .hero p {
     font-size: 1.2rem;
-    margin-bottom: 30px;
+    margin-bottom: 50px;
     opacity: 0.9;
 }
 
@@ -113,28 +114,32 @@ main {
 
 .btn-primary {
     background-color: #ff6b6b;
-    color: white;
+    color: #fff;
 }
 
 .btn-primary:hover {
-    background-color: #ff5252;
+    background-color: #fff;
+    color: #ff6b6b;
+    border: 2px solid #fff;
     transform: translateY(-2px);
 }
 
 .btn-secondary {
     background-color: transparent;
-    color: white;
-    border: 2px solid white;
+    
+    color: #fff;
+    background-color: #667eea;
 }
 
 .btn-secondary:hover {
-    background-color: white;
+    background-color: #fff;
     color: #667eea;
+    border: 2px solid #fff;
+    transform: translateY(-2px);
 }
 
-/* Filters section */
 .filters-section {
-    background: white;
+    background: #fff;
     padding: 30px 0;
     border-bottom: 1px solid #e0e0e0;
 }
@@ -187,7 +192,7 @@ main {
     padding: 8px 12px;
     border: 2px solid #e0e0e0;
     border-radius: 5px;
-    background-color: white;
+    background-color: #fff;
     cursor: pointer;
     transition: border-color 0.3s;
 }
@@ -197,8 +202,8 @@ main {
     border-color: #667eea;
 }
 
-/* Events sections */
 .events-section {
+    background-color: #333;
     padding: 60px 0;
 }
 
@@ -206,7 +211,7 @@ main {
     text-align: center;
     font-size: 2.5rem;
     margin-bottom: 50px;
-    color: #333;
+    color: #fff;
 }
 
 .events-section h2 i {
@@ -220,28 +225,77 @@ main {
     gap: 30px;
 }
 
-/* Event card */
+
+
 .event-card {
-    background: white;
+    height: 400px;
+    background: #667EEA;
     border-radius: 10px;
+    position: relative;
     overflow: hidden;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform all 0.3s ease;
+    cursor: pointer;
+    animation: slideInUp 0.6s ease-out;
 }
 
 .event-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.event-card:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
 }
 
 .event-image {
     width: 100%;
-    height: 200px;
+    height: 400px;
+    display: block;
     object-fit: cover;
 }
 
+.event-image img {
+    width: 100%;
+    height: 90%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+}
+
+.event-image h4{
+    height: 10%;
+    display: flex;
+    justify-content: center;
+    color: #fff;
+}
+
 .event-content {
+    position: absolute;
+    top: 0;
+      left: 0;
+    height: 100%;
     padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    padding: 1em;
+    box-sizing: border-box;
+    background-color: rgba(0, 0, 0, 0.6); 
+    color: #fff;
+}
+
+.event-card:hover .event-content {
+    opacity: 1;
+}
+
+.event-card:hover .event-image {
+    opacity: 0.1;
+}
+
+.event-description {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 15px;
 }
 
 .event-title {
@@ -273,13 +327,19 @@ main {
 
 .event-organization {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    color: #fff;
     padding: 8px 15px;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
     text-align: center;
-    margin-top: 10px;
+    margin: 10px 0px;
+}
+
+
+.event-link{
+    color: #667eea;
+    text-decoration: none;
 }
 
 .event-category {
@@ -293,10 +353,6 @@ main {
     font-weight: 600;
 }
 
-.event-card {
-    position: relative;
-}
-
 .category-competencia {
     color: #ff6b6b;
 }
@@ -305,9 +361,8 @@ main {
     color: #4ecdc4;
 }
 
-/* About section */
 .about-section {
-    background: white;
+    background: #fff;
     padding: 80px 0;
     text-align: center;
 }
@@ -353,10 +408,9 @@ main {
     font-size: 1rem;
 }
 
-/* Footer */
 footer {
     background: #333;
-    color: white;
+    color: #fff;
     padding: 40px 0 20px;
 }
 
@@ -418,21 +472,12 @@ footer {
     color: #ccc;
 }
 
-/* Descripción del evento */
-.event-description {
-    color: #666;
-    font-size: 0.9rem;
-    line-height: 1.4;
-    margin-bottom: 15px;
-}
-
-/* Botón de scroll to top */
 .scroll-to-top {
     position: fixed;
     bottom: 20px;
     right: 20px;
     background: #667eea;
-    color: white;
+    color: #fff;
     border: none;
     border-radius: 50%;
     width: 50px;
@@ -450,10 +495,9 @@ footer {
     transform: translateY(-2px);
 }
 
-/* Mensaje de error */
 .error-message {
     background: #ff6b6b;
-    color: white;
+    color: #fff;
     padding: 15px 0;
     text-align: center;
     position: fixed;
@@ -470,18 +514,6 @@ footer {
     gap: 10px;
 }
 
-/* Mejoras en las tarjetas de eventos */
-.event-card {
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.event-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
-}
-
-/* Indicador de modalidad con colores */
 .modality-presencial {
     color: #28a745;
 }
@@ -494,22 +526,24 @@ footer {
     color: #ffc107;
 }
 
-/* Estilos para las etiquetas de categoría */
 .category-competencia {
     background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-    color: white;
+    color: #fff;
 }
 
 .category-evento {
     background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
-    color: white;
+    color: #fff;
 }
 
-/* Mejoras en el header responsivo */
 @media (max-width: 768px) {
     header .container {
         flex-direction: column;
         gap: 15px;
+    }
+
+    .hero h2{
+        font-size: 2.5rem;
     }
 
     .logo {
@@ -522,14 +556,22 @@ footer {
 
     nav ul {
         justify-content: center;
+        gap: 20px;
     }
 
     main {
         margin-top: 120px;
     }
+    .event-description{
+        overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 7;
+    -webkit-box-orient: vertical;
+    }
+
 }
 
-/* Animaciones mejoradas */
 @keyframes slideInUp {
     from {
         opacity: 0;
@@ -542,11 +584,6 @@ footer {
     }
 }
 
-.event-card {
-    animation: slideInUp 0.6s ease-out;
-}
-
-/* Hover effects para filtros */
 .filter-group select:hover {
     border-color: #667eea;
 }
@@ -555,7 +592,6 @@ footer {
     border-color: #667eea;
 }
 
-/* Estilos para botones de acción en eventos */
 .event-actions {
     display: flex;
     gap: 10px;
@@ -573,12 +609,12 @@ footer {
 
 .btn-share {
     background: #1da1f2;
-    color: white;
+    color: #fff;
 }
 
 .btn-calendar {
     background: #34a853;
-    color: white;
+    color: #fff;
 }
 
 .event-action-btn:hover {
@@ -586,7 +622,6 @@ footer {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Mejoras en la navegación */
 nav a {
     position: relative;
     padding: 5px 0;
@@ -607,7 +642,6 @@ nav a:hover::after {
     width: 100%;
 }
 
-/* Estilos para el estado de carga */
 .loading {
     display: flex;
     flex-direction: column;
@@ -637,18 +671,11 @@ nav a:hover::after {
     }
 }
 
-/* Mejoras en la accesibilidad */
-.event-card:focus {
-    outline: 2px solid #667eea;
-    outline-offset: 2px;
-}
-
 .btn:focus {
     outline: 2px solid #667eea;
     outline-offset: 2px;
 }
 
-/* Estilos para tooltips */
 .tooltip {
     position: relative;
     cursor: help;
@@ -661,7 +688,7 @@ nav a:hover::after {
     left: 50%;
     transform: translateX(-50%);
     background: #333;
-    color: white;
+    color: #fff;
     padding: 5px 10px;
     border-radius: 3px;
     font-size: 0.8rem;
@@ -676,7 +703,6 @@ nav a:hover::after {
     visibility: visible;
 }
 
-/* Estilos para badges de organización */
 .organization-badge {
     display: inline-block;
     padding: 3px 8px;
@@ -688,9 +714,7 @@ nav a:hover::after {
     margin-top: 5px;
 }
 
-/* Mejoras en el footer */
 .footer-content {
-    border-bottom: 1px solid #555;
     padding-bottom: 20px;
 }
 
@@ -698,32 +722,6 @@ nav a:hover::after {
     padding-top: 20px;
 }
 
-/* Estilos para el modo oscuro (opcional) */
-@media (prefers-color-scheme: dark) {
-    body {
-        background-color: #1a1a1a;
-        color: #e0e0e0;
-    }
-
-    .event-card {
-        background: #2d2d2d;
-        color: #e0e0e0;
-    }
-
-    .filters-section {
-        background: #2d2d2d;
-        border-color: #444;
-    }
-
-    .search-bar input,
-    .filter-group select {
-        background: #3d3d3d;
-        color: #e0e0e0;
-        border-color: #555;
-    }
-}
-
-/* Estilos para impresión */
 @media print {
 
     header,
@@ -747,7 +745,6 @@ nav a:hover::after {
     }
 }
 
-/* Indicador de carga */
 .loading-spinner {
     position: fixed;
     top: 0;
@@ -763,7 +760,7 @@ nav a:hover::after {
 
 .spinner-container {
     text-align: center;
-    color: white;
+    color: #fff;
 }
 
 .spinner {
@@ -791,10 +788,9 @@ nav a:hover::after {
     margin-top: 15px;
 }
 
-/* Mensaje de error mejorado */
 .error-message {
     background: #ff4757;
-    color: white;
+    color: #fff;
     padding: 15px 0;
     position: fixed;
     top: 80px;
@@ -814,10 +810,9 @@ nav a:hover::after {
     font-size: 1.2rem;
 }
 
-/* Mensaje de éxito */
 .success-message {
     background: #2ed573;
-    color: white;
+    color: #fff;
     padding: 15px 0;
     position: fixed;
     top: 80px;
@@ -849,7 +844,6 @@ nav a:hover::after {
     }
 }
 
-/* Mejorar el estilo de no resultados */
 .no-results {
     text-align: center;
     padding: 60px 20px;
@@ -872,10 +866,13 @@ nav a:hover::after {
     opacity: 0.8;
 }
 
-/* Botón de limpiar filtros */
+.no-events{
+    color: #fff;;
+}
+
 .clear-filters-btn {
     background: #ff4757;
-    color: white;
+    color: #fff;
     border: none;
     padding: 10px 20px;
     border-radius: 5px;
@@ -889,7 +886,6 @@ nav a:hover::after {
     background: #e84118;
 }
 
-/* Indicador de estado de conexión */
 .connection-status {
     position: fixed;
     top: 80px;
@@ -903,15 +899,15 @@ nav a:hover::after {
 
 .connection-status.online {
     background: #2ed573;
-    color: white;
+    color: #fff;
 }
 
 .connection-status.offline {
     background: #ff4757;
-    color: white;
+    color: #fff;
 }
 
 .connection-status.loading {
     background: #ffa502;
-    color: white;
+    color: #fff;
 }
