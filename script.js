@@ -228,7 +228,7 @@ async function handleSearch() {
             const data = await response.json();
             filteredEvents = data.results ? data.results : data;
         } else {
-            // Usar el endpoint de búsqueda de Django
+            // Para usar el endpoint de búsqueda de Django
             const searchURL = `${API_ENDPOINTS.search}?q=${encodeURIComponent(searchTerm)}`;
             const response = await fetch(searchURL, {
                 method: 'GET',
